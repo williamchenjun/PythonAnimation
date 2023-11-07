@@ -1,7 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from typing import Callable
+try: import numpy as np
+except: raise ModuleNotFoundError("You need numpy to use this module. Please install it via pip install numpy.")
+try: import matplotlib.pyplot as plt
+except: raise ModuleNotFoundError("You need matplotplib to use this module. Please install it via pip install matplotlib.")
+try: import matplotlib.animation as animation
+except: raise ModuleNotFoundError("Failed to load the animation module.")
+from typing import Callable, Union
 
 class Animate:
     """
@@ -24,7 +27,7 @@ class Animate:
     def __init__(self, *, max_plots: int = 10) -> None:
         self.funcs = []
         self.max_plots = max_plots
-        self.range = ()
+        self.range = np.linspace(0, 5, 100)
         self.lines = []
         self.fig, self.ax = plt.subplots()
         self.attrs = {k: dict() for k in range(max_plots)}
@@ -66,7 +69,7 @@ class Animate:
             raise ValueError("You have reached the maximum number of functions allowed. Please change the max_plots attribute to add more!")
         return self
     
-    def set_xrange(self, amin: float, amax: float, frames: int):
+    def set_xrange(self, amin: float, amax: float, frames: int, *, padding: Union[float, tuple[float]] = 0):
         """
         Set the range of the x-axis.
 
@@ -80,11 +83,14 @@ class Animate:
         -------
         `self` : The `Animate` object.
         """
+        
         self.range = np.linspace(amin, amax, frames)
-        self.ax.set_xlim(amin, amax)
+        if type(padding) in (float, int): self.ax.set_xlim(amin - padding, amax + padding)
+        elif type(padding) in (list, tuple) and len(padding) == 2: self.ax.set_xlim(amin - padding[0], amax + padding[1])
+        else: raise TypeError("The padding should either be a number or an iterable of length 2.")
         return self
     
-    def set_yrange(self, amin: float, amax: float):
+    def set_yrange(self, amin: float, amax: float, *, padding: Union[float, tuple[float]] = 0):
         """
         Set the range of the y-axis.
 
@@ -92,12 +98,16 @@ class Animate:
         ----------
         `amin` : `float` - Lower bound of axis range.
         `amax` : `float` - Upper bound of axis range.
+        `padding` : `float` - Optional parameter to define the vertical padding.
 
         Return
         -------
         `self` : The `Animate` object.
         """
-        self.ax.set_ylim(amin, amax)
+
+        if type(padding) in (float, int): self.ax.set_ylim(amin - padding, amax + padding)
+        elif type(padding) in (list, tuple) and len(padding) == 2: self.ax.set_ylim(amin - padding[0], amax + padding[1])
+        else: raise TypeError("The padding should either be a number or an iterable of length 2.")
         return self
     
     def set_plot_attrs(self, idx: int, **plot_kwargs):
@@ -167,11 +177,11 @@ class Animate:
                 os.chdir(chdir)
             ani.save(f"Animation.{_format}", fps = fps, dpi = dpi)
 
-ani = Animate()
-cosine = lambda x : np.cos(x)
-sine = lambda x : np.sin(x)
-exp = lambda x : np.exp(-x)
-sine2 = lambda x : np.sin(x**2)
-ani.ax.spines[['right', 'top']].set_visible(False)
-ani.ax.set_title("Testing Animation Constructor", fontdict={'weight' : 'bold', 'size' : 16})
-ani.set_funcs([cosine, sine, sine2, exp]).set_xrange(0, 10, 500).set_yrange(-3, 2).set_plot_attrs(1, color='purple').set_plot_attrs(0, color = 'green').animate(interval=5, save = False)
+# ani = Animate()
+# cosine = lambda x : np.cos(x)
+# sine = lambda x : np.sin(x)
+# exp = lambda x : np.exp(-x)
+# sine2 = lambda x : np.sin(x**2)
+# ani.ax.spines[['right', 'top']].set_visible(False)
+# ani.ax.set_title("Testing Animation Constructor", fontdict={'weight' : 'bold', 'size' : 16})
+# ani.set_funcs([cosine, sine, sine2, exp]).set_xrange(0, 10, 500).set_yrange(-3, 2).set_plot_attrs(1, color='purple').set_plot_attrs(0, color = 'green').animate(interval=5, save = False)
