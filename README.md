@@ -2,7 +2,7 @@
 
 > Note: This is not the final version.
 
-If you're looking to animating your plots in Python, you could benefit from using this module. It is a simple class called `Animate` and it is just as simple as defining the function you want to plot and it is done! It's still just a prototype, but I will be updating this in order to animate more types of plots.
+If you're here because you want to animate your plots in Python, you could benefit from using this module. It is a simple class called `Animate` and it is just as simple as defining the function you want to plot and it is done! It's still just a prototype, but I will be updating this in order to animate more types of plots.
 
 # How to install
 
