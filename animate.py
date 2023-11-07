@@ -176,12 +176,3 @@ class Animate:
                 import os 
                 os.chdir(chdir)
             ani.save(f"Animation.{_format}", fps = fps, dpi = dpi)
-
-# ani = Animate()
-# cosine = lambda x : np.cos(x)
-# sine = lambda x : np.sin(x)
-# exp = lambda x : np.exp(-x)
-# sine2 = lambda x : np.sin(x**2)
-# ani.ax.spines[['right', 'top']].set_visible(False)
-# ani.ax.set_title("Testing Animation Constructor", fontdict={'weight' : 'bold', 'size' : 16})
-# ani.set_funcs([cosine, sine, sine2, exp]).set_xrange(0, 10, 500).set_yrange(-3, 2).set_plot_attrs(1, color='purple').set_plot_attrs(0, color = 'green').animate(interval=5, save = False)
