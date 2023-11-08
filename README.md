@@ -54,7 +54,7 @@ def f(x):
 
 anim = Animate()
 anim.ax.spines[['right', 'top']].set_visible(False)
-anim.set_func(f).set_xrange(0, 10, 500).set_yrange(-1, 1, padding = 1).set_plot_attrs(0, color = 'orange', lw = 3).animate(save=True, fps = 60)
+anim.set_func(f).set_xrange(0, 10, 500).set_yrange(-1, 1, padding = 1).set_plot_attrs(0, color = 'orange', lw = 3).animate()
 ```
 as you can see it is very simple and you can also still access the `matplotlib` components themselves, such as the `Axes` and `Figure`.
 
@@ -83,11 +83,78 @@ anim.ax.spines[['right', 'top']].set_visible(False)
 anim.set_funcs([f, g]).set_xrange(0, 10, 500).set_yrange(-1, 1, padding = 1)
 anim.set_plot_attrs(0, color = 'orange', lw = 3)
 anim.set_plot_attrs(1, color = 'green', lw = 3, ls = 'dashed')
-anim.animate(save=True, fps = 60)
+anim.animate()
 ```
 
 You can obviously decide to call each method separately instead of concatenating everything, which might become less readable. As you can see we just use `set_funcs` instead of `set_func`, and we can target each function (in order) to set their own attributes:
 <video src="https://github.com/williamchenjun/PythonAnimation/assets/79821802/9a702ca5-616b-43a5-b6aa-78b6f512f6b4"></video>
 
+## Animating vertical lines and inverses
 
+You can also implement animations where functions "grow" upwards rather than left to right. For example, if we consider the function
+
+```math
+f(x) = x^2 \implies x = \sqrt{y}
+```
+we can animate this by specifying the `inverse` argument in `set_func`
+
+```python
+from animate import Animate
+import numpy as np
+
+def f(y):
+  return y**2
+
+anim = Animate()
+anim.ax.spines[['right', 'top']].set_visible(False)
+anim.set_func(f, inverse = True).set_xrange(-1, 5, 500).set_yrange(-2, 2, padding = 1)
+anim.set_plot_attrs(0, color = 'violet', lw = 3)
+anim.animate()
+```
+
+which generates the following
+
+<video src="https://github.com/williamchenjun/PythonAnimation/assets/79821802/533868ef-a3dc-4e4b-80c0-ccb6c626964b
+"></video>
+
+As we can see, we don't need to write the inverse function itself. If we define the inverse parameter, it will automatically invert it. If you write the inverse function, and set `inverse` to `True` then it will just output the original non-inverted function.
+
+## Delay Animation
+
+> **Note**: This is still a work in progress.
+
+If you want your plots to start at a different time, you can do this by specifying the `_sleep` parameter in the `set_func` method. This is still not available for the `set_funcs` method. 
+
+It can be achieved easily in the following way:
+
+```python
+from animate import Animate
+import numpy as np
+
+def f(x):
+  return x**3
+
+def g(x):
+  return x**2
+
+def h(x):
+  return np.sin(x)
+
+anim = Animate()
+anim.ax.spines[['right', 'top']].set_visible(False)
+anim.set_func(f).set_xrange(-1.5, 1.5, 500).set_yrange(-3, 3, padding = 0.5)
+anim.set_func(g, _sleep = 1)
+anim.set_func(h, _sleep = 2)
+anim.set_plot_attrs(0, color = 'indianred', lw = 3)
+anim.set_plot_attrs(1, color = 'dodgerblue', lw = 3, ls = 'dotted')
+anim.set_plot_attrs(2, color = 'mediumpurple', lw = 5, ls = 'dashdot')
+anim.animate(duration=5, save=True)
+```
+
+which will result in the following animation
+
+<video src="https://github.com/williamchenjun/PythonAnimation/assets/79821802/e0d8762d-7ee3-4b46-be5b-9aaf62b3efc3
+"></video>
+
+> Note: You can specify the duration of the video output by passing the `duration` in seconds. The video will end when all animations terminate (once).
 
