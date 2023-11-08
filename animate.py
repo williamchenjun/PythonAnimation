@@ -6,9 +6,7 @@ try: import matplotlib.animation as animation
 except: raise ModuleNotFoundError("Failed to load the animation module.")
 from typing import Callable, Union
 from Lines import Lines
-from time import sleep
-from datetime import datetime, timedelta
-from multiprocessing import Process
+from datetime import datetime
 
 class Animate:
     """
