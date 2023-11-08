@@ -119,6 +119,42 @@ which generates the following
 
 As we can see, we don't need to write the inverse function itself. If we define the inverse parameter, it will automatically invert it. If you write the inverse function, and set `inverse` to `True` then it will just output the original non-inverted function.
 
+I have also included an additional module called `Lines.py` in this repository. It is just a utility class to define vertical and horizontal lines. We can use those in conjuction to the `inverse` property to animate vertical lines:
+
+```python
+from animate import Animate
+from Lines import Lines
+import numpy as np
+
+def f(x):
+  return x
+
+def g(x):
+  return x**2
+
+def h(x):
+  return np.sin(x)
+
+anim = Animate()
+line = Lines()
+anim.ax.spines[['right', 'top']].set_visible(False)
+anim.set_func(f).set_xrange(0, 5, 500).set_yrange(0, 5)
+anim.set_func(line.vline(x = 2), inverse=True, _sleep = 1)
+anim.set_func(line.vline(x = 4), inverse=True, _sleep = 2)
+anim.set_func(line.hline(y = 2), _sleep = 1)
+anim.set_plot_attrs(0, lw = 3, color = 'blueviolet')
+anim.set_plot_attrs(1, lw = 3, ls = 'dashed', color = 'mediumturquoise')
+anim.set_plot_attrs(2, lw = 3, ls = 'dashed', color = 'limegreen')
+anim.set_plot_attrs(3, lw = 3, ls = 'dashed', color = 'lightsalmon')
+anim.ax.set_title("Testing vertical and horizontal lines".title(), fontdict = {'weight' : 'bold', 'size' : 15, 'family' : 'Helvetica', 'color' : '#393939'})
+anim.animate(save = True, duration = 5)
+```
+which outputs the following
+
+<video src="https://github.com/williamchenjun/PythonAnimation/assets/79821802/62bd9a78-4110-4c36-8553-56fdf744c18f"></video>
+
+> Note: The code looks very messy, but you could easily define a few functions since they don't really require much changing.
+
 ## Delay Animation
 
 > **Note**: This is still a work in progress.
