@@ -7,6 +7,7 @@ except: raise ModuleNotFoundError("Failed to load the animation module.")
 from typing import Callable, Union
 from Lines import Lines
 from time import sleep
+from datetime import datetime, timedelta
 from multiprocessing import Process
 
 class Animate:
@@ -36,6 +37,9 @@ class Animate:
         self.lines = []
         self.fig, self.ax = plt.subplots()
         self.attrs = {k: dict() for k in range(max_plots)}
+        self.acc_delay = {k: 0 for k in range(max_plots)}
+        self.animation_started = True
+        self.current_time = dict()
     
     def set_funcs(self, funcs: list[Callable]):
         """
@@ -56,7 +60,7 @@ class Animate:
             raise ValueError("You have reached the maximum number of functions allowed. Please change the max_plots attribute to add more!")
         return self
     
-    def set_func(self, func: Callable, inverse: bool = False, _sleep: int = None, *, time_scale : float = 15):
+    def set_func(self, func: Callable, inverse: bool = False, _sleep: int = None):
         """
         Set a function to be plotted.
 
@@ -64,18 +68,15 @@ class Animate:
         ----------
         `func` : `Callable` - Function.
         `inverse` : `bool` - Whether you want to plot the function inverting the x and y values.
-        `_sleep` : `int` - Defining this parameter will delay the beginning of the animation for the specified function. The unit of measure is not seconds.
-        `time_scale` : `float` - Use this factor to scale the sleep time. The higher the value, the longer the delay. Note that if you set this too high it might cause issues.
-
-        > Note: The time is not an exact representation of real time as this is not done via multithread processes or asynchronously. It calculated as a factor of frame rate. The duration of the video, if saved, can be calculated as `frames * (1 / fps)` whereas the displayed animation will have duration `frames * interval / 1000`.
+        `_sleep` : `int` - Delay the start of an animation (in seconds).
 
         Return
         -------
         `self` : The `Animate` object.
         """
         if len(self.funcs) < self.max_plots:
+            if _sleep: self.sleep_idxs[len(self.funcs)] = _sleep
             if inverse: self.inv_idxs.append(len(self.funcs))
-            if _sleep: self.sleep_idxs[len(self.funcs)] = [_sleep*time_scale, 0]
             self.funcs.append(func)
         else:
             raise ValueError("You have reached the maximum number of functions allowed. Please change the max_plots attribute to add more!")
@@ -169,29 +170,35 @@ class Animate:
     
     def __update(self, num: int):
         for idx, (line, func) in enumerate(zip(self.lines, self.funcs)):
+            
             if idx in self.sleep_idxs.keys():
-                _goal, _curr = self.sleep_idxs[idx]
-                if _goal >= _curr:
-                    _curr += 1
-                    self.sleep_idxs[idx][-1] = _curr
+                if self.animation_started:
+                    self.current_time[idx] = datetime.now()
+                curr_time = datetime.now()
+                if (curr_time - self.current_time[idx]).total_seconds() < self.sleep_idxs[idx]:
+                    self.acc_delay[idx] += 1
                     continue
                 else:
                     pass
 
             x = self.range
             y = func(x)
-
+            
             if idx in self.inv_idxs:
-                if idx not in self.sleep_idxs.keys(): line.set_data(y[:num], x[:num])
-                else: line.set_data(y[:(num - _goal)], x[:(num - _goal)])
+                if idx not in self.sleep_idxs.keys(): 
+                    if num <= len(self.range): line.set_data(y[:num], x[:num])
+                else:
+                    if (num - self.acc_delay[idx]) >= 0: line.set_data(y[:(num - self.acc_delay[idx])], x[:(num - self.acc_delay[idx])])
             else:
-                if idx not in self.sleep_idxs.keys(): line.set_data(x[:num], y[:num])
-                else: line.set_data(x[:(num - _goal)], y[:(num - _goal)])
+                if idx not in self.sleep_idxs.keys(): 
+                    if num <= len(self.range): line.set_data(x[:num], y[:num])
+                else:
+                    if (num - self.acc_delay[idx]) >= 0: line.set_data(x[:(num - self.acc_delay[idx])], y[:(num - self.acc_delay[idx])])
                 
-        
+        self.animation_started = False
         return self.lines
 
-    def animate(self, interval: int = 20, repeat: bool = True, save: bool = False, *, chdir: str = None, _format: str = "mp4", fps: int = 30, dpi: int = 300, **kwargs):
+    def animate(self, interval: int = 20, repeat: bool = True, save: bool = False, *, chdir: str = None, _format: str = "mp4", fps: int = 30, dpi: int = 300, duration: int = None, **kwargs):
         """
         Start the animation.
 
@@ -199,13 +206,30 @@ class Animate:
         ----------
         - `interval` : `int` - Determines how fast the animation is. The smaller the value, the faster.
         - `repeat` : `bool` - Whether to repeat the animation when it has ended.
+        - `save` : `bool` - Save animation on the current directory.
+        - `chdir` . `str` - Change directory.
+        - `_format`: `str` - Animation format.
+        - `fps`: `int` - Frames per second (valid only for saved video).
+        - `dpi`: `int` - Dots per inch. The higher the number, the better the quality (valid only for saved video).
+        - `duration` : `int` - Define how long you want the video to be. Note that this will override custom `interval` and `fps`.
         - `kwargs` : `dict[str, any]` - Pass additional arguments to the `FuncAnimation` class.
         """
-        ani = animation.FuncAnimation(self.fig, self.__update, len(self.range), init_func=self.__init_axes, interval=interval, blit=True, cache_frame_data=False, repeat = repeat, **kwargs)
-        if not save: plt.show()
+        if len(self.sleep_idxs): frames = len(self.range) + int((max(self.sleep_idxs.values()) + 1)*1000/interval)
+        else: frames = len(self.range)
+
+        if not save: 
+            if duration:
+                interval = int(1000*duration/frames)
+            ani = animation.FuncAnimation(self.fig, self.__update, frames, init_func=self.__init_axes, interval=interval, blit=True, cache_frame_data=False, repeat = repeat, **kwargs)
+            plt.show()
+
         else: 
-            if len(self.sleep_idxs): raise ValueError("You cannot define delays and have repeat set to False. This would generate an incomplete graph.")
+            if len(self.sleep_idxs) and not repeat: raise ValueError("You cannot define delays and have repeat set to False. This would generate an incomplete graph.")
+            if duration:
+                fps = int(frames / duration)
+
             if chdir: 
                 import os 
                 os.chdir(chdir)
+            ani = animation.FuncAnimation(self.fig, self.__update, frames, init_func=self.__init_axes, interval=interval, blit=True, cache_frame_data=False, repeat = repeat, **kwargs)
             ani.save(f"Animation.{_format}", fps = fps, dpi = dpi)
